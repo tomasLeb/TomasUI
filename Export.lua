@@ -1,5 +1,5 @@
 -- TomasUI · Export.lua
--- /tui export: recoge el estado actual del autor (perfil "TomasUI" de ElvUI y Plater,
+-- /tui export: recoge el estado actual del autor (perfil "TomasUI" de ElvUI, Plater y Details!,
 -- ajustes privados del personaje, distribuciones del modo edición y medidas de pantalla).
 --  · Lo guarda en TomasUIDB.export (SavedVariables) para que tools/build_data.py genere
 --    Data.lua directamente desde la carpeta WTF tras un /reload.
@@ -23,6 +23,14 @@ local function Collect()
 		plater = PlaterAPI:ExportProfile(key) or ''
 	end
 
+	local details = ''
+	local D = _G.Details
+	if D and D.ExportCurrentProfile then
+		local profileName = (D.GetProfile and D:GetProfile(name, false)) and name or nil
+		local ok, str = pcall(D.ExportCurrentProfile, D, profileName)
+		if ok and type(str) == 'string' then details = str end
+	end
+
 	ns.SnapshotEditModeLayouts()
 
 	local physW, physH = GetPhysicalScreenSize()
@@ -41,6 +49,7 @@ local function Collect()
 		elvProfile = elvProfile,
 		elvPrivate = elvPrivate or '',
 		plater = plater,
+		details = details,
 		editModeLayouts = TomasUIDB.editModeSnapshot or ns.Data.editModeLayouts or {},
 	}
 end
@@ -76,9 +85,10 @@ ns.Data = {
 	elvProfile = [=[%s]=],
 	elvPrivate = [=[%s]=],
 	plater = [=[%s]=],
+	details = [=[%s]=],
 }
 ]], d.version, Num(r.physW), Num(r.physH), Num(r.uiScale), Num(r.uiW), Num(r.uiH), Num(r.elvW), Num(r.elvH),
-		tostring(r.ultrawide), tostring(r.eyefinity), table.concat(layouts, '\n'), d.elvProfile, d.elvPrivate, d.plater)
+		tostring(r.ultrawide), tostring(r.eyefinity), table.concat(layouts, '\n'), d.elvProfile, d.elvPrivate, d.plater, d.details or '')
 end
 
 local frame

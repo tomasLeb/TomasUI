@@ -1,5 +1,10 @@
 # Cambios
 
+## v1.1.0 — 2026-11-12
+
+- El pack incluye el perfil de **Details!** (aspecto, barras de abajo arriba…): se importa como perfil `TomasUI` al aplicar y se exporta con `/tui export`.
+- El aviso de versión nueva menciona Details!.
+
 ## v1.0.0 — 2026-11-12
 
 Primera versión pública.

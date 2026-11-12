@@ -175,6 +175,19 @@ local function ApplyPlater()
 	return true
 end
 
+local function ApplyDetailsProfile()
+	local str = ns.Data.details
+	if not str or str == '' then return end
+	local D = _G.Details
+	if not (D and D.ImportProfile) then
+		Print('Details! no está activado; me salto su perfil.')
+		return
+	end
+	-- nombre del perfil, sin autoejecutar código, sin ventana de confirmación, sobrescribiendo
+	local ok, err = pcall(D.ImportProfile, D, str, ns.Config.profileName, false, false, true)
+	if not ok then Print('|cffff4444No he podido importar el perfil de Details!:|r ' .. tostring(err)) end
+end
+
 function ns.Apply()
 	if InCombatLockdown() then
 		Print('En combate: lo aplico al salir.')
@@ -188,6 +201,7 @@ function ns.Apply()
 	end
 	if not ok then return end
 	ApplyPlater()
+	ApplyDetailsProfile()
 	TomasUICharDB.applied = ns.Data.version
 	pcall(ns.EnsureEditModeLayouts)
 	ReloadUI()
@@ -197,7 +211,7 @@ end
 -- Aviso de versión nueva
 -------------------------------------------------------------------------------
 StaticPopupDialogs['TOMASUI_UPDATE'] = {
-	text = 'TomasUI: hay una versión nueva del perfil (%s).\n\nSe sobrescribirán tus perfiles de ElvUI y Plater llamados "TomasUI" y se recargará la interfaz.',
+	text = 'TomasUI: hay una versión nueva del perfil (%s).\n\nSe sobrescribirán tus perfiles de ElvUI, Plater y Details! llamados "TomasUI" y se recargará la interfaz.',
 	button1 = 'Aplicar',
 	button2 = 'Ahora no',
 	OnAccept = function() ns.Apply() end,

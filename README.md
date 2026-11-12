@@ -2,7 +2,7 @@
 
 Interfaz para **WoW Forever** basada en ElvUI y Plater: pixel perfect y con el mismo aspecto en cualquier monitor.
 
-- Un perfil de ElvUI y otro de Plater listos para usar.
+- Perfiles de ElvUI, Plater y Details! listos para usar.
 - Igual en 1080p y 1440p (también ultrapanorámicos): misma escala y posiciones calculadas sobre una rejilla de 3/6 unidades.
 - Coloca el swing timer de Blizzard, el marco de misiones y una ventana de Details!.
 - Crea dos distribuciones del modo edición (`TomasUI - Melee` y `TomasUI - Ranged`) y activa la adecuada según tu clase.
@@ -48,7 +48,7 @@ Interfaz para **WoW Forever** basada en ElvUI y Plater: pixel perfect y con el m
 - **ElvUI:** perfil `TomasUI` (se crea o sobrescribe y se activa), ajustes privados del personaje, escala de UI y dos paneles de datos propios.
 - **Plater:** perfil `TomasUI`.
 - **Modo edición:** crea `TomasUI - Melee` y `TomasUI - Ranged` si no existen (no toca tus otras distribuciones).
-- **Details!:** deja una sola ventana abajo a la derecha.
+- **Details!:** perfil `TomasUI` (tu aspecto de Details!) y una sola ventana abajo a la derecha.
 
 Tus otros perfiles de ElvUI y Plater no se modifican: para volver atrás, elige tu perfil anterior en `/ec` → Perfiles.
 
@@ -72,7 +72,7 @@ Tus otros perfiles de ElvUI y Plater no se modifican: para volver atrás, elige 
 
 | Fichero | Qué es |
 |---|---|
-| `Data.lua` | **Generado.** Perfiles exportados (ElvUI, privados, Plater), distribuciones del modo edición y medidas de la pantalla del autor. |
+| `Data.lua` | **Generado.** Perfiles exportados (ElvUI, privados, Plater, Details!), distribuciones del modo edición y medidas de la pantalla del autor. |
 | `Config.lua` | **A mano.** Todo lo que no va en los perfiles o se fuerza encima. |
 | `Core.lua` | Lógica: aplicar, escala, recolocar movers, swing timer, Details!, modo edición… |
 | `Export.lua` | `/tui export`. |

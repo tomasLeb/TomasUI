@@ -37,13 +37,14 @@ def render(d):
         '\telvProfile = %s,\n'
         '\telvPrivate = %s,\n'
         '\tplater = %s,\n'
+        '\tdetails = %s,\n'
         '}\n'
     ) % (int(d['version']),
          lua_number(r['physW']), lua_number(r['physH']), lua_number(r['uiScale']),
          lua_number(r['uiW']), lua_number(r['uiH']), lua_number(r['elvW']), lua_number(r['elvH']),
          lua_number(bool(r.get('ultrawide'))), lua_number(bool(r.get('eyefinity'))),
          layouts, lua_long_string(d['elvProfile']), lua_long_string(d.get('elvPrivate') or ''),
-         lua_long_string(d.get('plater') or ''))
+         lua_long_string(d.get('plater') or ''), lua_long_string(d.get('details') or ''))
 
 
 def main():
