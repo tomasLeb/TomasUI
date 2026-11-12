@@ -8,7 +8,7 @@
 ## OptionalDeps: Plater, Details
 ## SavedVariables: TomasUIDB
 ## SavedVariablesPerCharacter: TomasUICharDB
-## X-Website: https://github.com/tomasLeb/TomasUI
+## X-Website: https://github.com/tomasLeb/tomasui
 
 Config.lua
 Data.lua

@@ -20,11 +20,11 @@ Interfaz para **WoW Forever** basada en ElvUI y Plater: pixel perfect y con el m
 
 ### Con WowUp (recomendado: se actualiza solo)
 1. En WowUp, elige **WoW Forever**.
-2. *Get Addons* → **Install from URL** → `https://github.com/tomasLeb/TomasUI`
+2. *Get Addons* → **Install from URL** → `https://github.com/tomasLeb/tomasui`
 3. Cuando salga una versión nueva, WowUp la marcará para actualizar.
 
 ### A mano
-1. Descarga el `.zip` de la última versión en [Releases](https://github.com/tomasLeb/TomasUI/releases).
+1. Descarga el `.zip` de la última versión en [Releases](https://github.com/tomasLeb/tomasui/releases).
 2. Descomprímelo en `World of Warcraft\_forever_\Interface\AddOns\` (debe quedar la carpeta `TomasUI`).
 
 ### Primera vez en el juego
@@ -64,12 +64,9 @@ Tus otros perfiles de ElvUI y Plater no se modifican: para volver atrás, elige 
    ```
    (Alternativa: copiar el texto de la ventana de `/tui export` y pegarlo entero en `Data.lua`.)
 4. Si cambias algo que no está en los perfiles (paneles propios, swing timer, Details!, marco de misiones, ajustes forzados), edita `Config.lua`.
-5. Apunta los cambios en `CHANGELOG.md`, haz commit y crea una etiqueta de versión:
-   ```
-   git tag v1.1.0
-   git push --follow-tags
-   ```
-   GitHub Actions empaqueta el addon y publica la release; WowUp la ofrecerá a todos.
+5. Añade arriba del todo en `CHANGELOG.md` un apartado `## v1.1.0 — fecha` con los cambios, haz commit y `git push`.
+   GitHub Actions ve la versión nueva, crea la etiqueta `v1.1.0`, empaqueta el addon y publica la release; WowUp la ofrecerá a todos.
+   (Empujar una etiqueta `vX.Y.Z` a mano también funciona.)
 
 ### Estructura
 
