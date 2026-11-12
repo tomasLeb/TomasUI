@@ -112,7 +112,7 @@ end
 -- Aplicar
 -------------------------------------------------------------------------------
 local function ApplyElvUI()
-	local E, _, _, _, G = unpack(ElvUI)
+	local E, _, V, P, G = unpack(ElvUI)
 	local D = E:GetModule('Distributor')
 	local data, cfg = ns.Data, ns.Config
 
@@ -132,6 +132,11 @@ local function ApplyElvUI()
 		return false
 	end
 	NormalizeMovers(pData.movers)
+	if ns.RemapFonts then
+		local extra = cfg.font and cfg.font.replaceElvUI
+		ns.RemapFonts(pData, extra)
+		ns.FillFontDefaults(pData, P, extra)
+	end
 	for path, value in pairs(cfg.profileOverrides or {}) do SetPath(pData, path, value) end
 	D:SetImportedProfile('profile', cfg.profileName, pData, true)
 
@@ -139,6 +144,11 @@ local function ApplyElvUI()
 	local vData = Read(data.elvPrivate, 'private')
 	local key = ElvPrivateDB.profileKeys and ElvPrivateDB.profileKeys[E.mynameRealm]
 	if type(vData) == 'table' and key then
+		if ns.RemapFonts then
+			local extra = cfg.font and cfg.font.replaceElvUI
+			ns.RemapFonts(vData, extra)
+			ns.FillFontDefaults(vData, V, extra)
+		end
 		for path, value in pairs(cfg.privateOverrides or {}) do SetPath(vData, path, value) end
 		ElvPrivateDB.profiles[key] = E:FilterTableFromBlacklist(vData, D.blacklistedKeys.private)
 	end
@@ -167,6 +177,15 @@ local function ApplyPlater()
 		Print('Plater no está activado; me salto su perfil.')
 		return true
 	end
+	-- Cambiar las fuentes por la nuestra antes de importar
+	if type(platerData) == 'string' and ns.RemapFonts and Plater.DecompressData and Plater.CompressData then
+		local ok, t = pcall(Plater.DecompressData, platerData, 'print', true)
+		if ok and type(t) == 'table' then
+			ns.RemapFonts(t)
+			local ok2, s = pcall(Plater.CompressData, t, 'print')
+			if ok2 and type(s) == 'string' and s ~= '' then platerData = s end
+		end
+	end
 	if PlaterAPI and PlaterAPI.ImportProfile then
 		PlaterAPI:ImportProfile(platerData, ns.Config.profileName)
 	else
@@ -182,6 +201,15 @@ local function ApplyDetailsProfile()
 	if not (D and D.ImportProfile) then
 		Print('Details! no está activado; me salto su perfil.')
 		return
+	end
+	-- Cambiar las fuentes por la nuestra antes de importar
+	if ns.RemapFonts and D.DecompressData and D.CompressData then
+		local ok, t = pcall(D.DecompressData, D, str, 'print')
+		if ok and type(t) == 'table' then
+			ns.RemapFonts(t)
+			local ok2, s = pcall(D.CompressData, D, t, 'print', true)
+			if ok2 and type(s) == 'string' and s ~= '' then str = s end
+		end
 	end
 	-- nombre del perfil, sin autoejecutar código, sin ventana de confirmación, sobrescribiendo
 	local ok, err = pcall(D.ImportProfile, D, str, ns.Config.profileName, false, false, true)

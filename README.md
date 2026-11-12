@@ -31,6 +31,10 @@ Interfaz para **WoW Forever** basada en ElvUI y Plater: pixel perfect y con el m
 1. Entra con tu personaje. A los pocos segundos aparece un aviso: pulsa **Aplicar**. La interfaz se recarga.
 2. Si te dice que ha creado las distribuciones del modo edición, haz `/reload` una vez más.
 3. Repite el paso 1 con cada personaje (los ajustes privados de ElvUI son por personaje).
+4. Sal a la pantalla de personajes y vuelve a entrar: los nombres sobre los personajes y los números de daño solo cambian de fuente al entrar en el mundo.
+
+### Fuente
+La fuente Righteous va incluida y se aplica sola. Lo único que un addon no puede cambiar es la pantalla de selección de personajes y el texto de combate sobre ti (daño y curación recibidos). Si los quieres también en Righteous, copia `Interface\AddOns\TomasUI\Media\Righteous-Regular.ttf` a `World of Warcraft\_forever_\Fonts\` tres veces, con los nombres `FRIZQT__.TTF`, `ARIALN.TTF` y `skurri.TTF` (crea la carpeta `Fonts` si no existe), y reinicia el juego. Para deshacerlo, borra esos tres ficheros.
 
 ## Comandos
 
@@ -75,7 +79,9 @@ Tus otros perfiles de ElvUI y Plater no se modifican: para volver atrás, elige 
 | `Data.lua` | **Generado.** Perfiles exportados (ElvUI, privados, Plater, Details!), distribuciones del modo edición y medidas de la pantalla del autor. |
 | `Config.lua` | **A mano.** Todo lo que no va en los perfiles o se fuerza encima. |
 | `Core.lua` | Lógica: aplicar, escala, recolocar movers, swing timer, Details!, modo edición… |
+| `Fonts.lua` | Registra la fuente incluida y la pone en los perfiles al aplicar. |
 | `Export.lua` | `/tui export`. |
+| `Media/` | Fuente Righteous y su licencia (OFL). |
 | `tools/build_data.py` | SavedVariables → `Data.lua`. |
 | `tools/decode.py` | Decodifica cadenas `!E2!` / `!PLATER:2!` a JSON para revisar cambios (`pip install cbor2`). |
 | `tools/layout_pp.py` | Genera el perfil pixel perfect desde el perfil original (`tools/base_profile.txt`); documenta la rejilla. |

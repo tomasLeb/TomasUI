@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Interface-Camelot: 16001
 ## Title: |cff33ccffTomasUI|r
-## Notes: Interfaz de Tomás para WoW Forever (ElvUI + Plater), pixel perfect y igual en cualquier monitor.
+## Notes: Interfaz de Tomás para WoW Forever (ElvUI + Plater + Details!), pixel perfect y igual en cualquier monitor.
 ## Author: Tomás
 ## Version: @project-version@
 ## Dependencies: ElvUI
@@ -11,6 +11,7 @@
 ## X-Website: https://github.com/tomasLeb/tomasui
 
 Config.lua
+Fonts.lua
 Data.lua
 Core.lua
 Export.lua

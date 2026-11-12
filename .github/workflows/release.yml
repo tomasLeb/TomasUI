@@ -58,7 +58,7 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           VERSION="${TAG#v}"
           mkdir -p dist/TomasUI
-          cp TomasUI.toc *.lua dist/TomasUI/
+          cp -r TomasUI.toc *.lua Media dist/TomasUI/
           sed -i "s/@project-version@/$VERSION/" dist/TomasUI/TomasUI.toc
           (cd dist && zip -r "TomasUI-$TAG.zip" TomasUI)
           # Notas de la release: el apartado de esta versión en CHANGELOG.md

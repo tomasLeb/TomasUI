@@ -39,9 +39,20 @@ ns.Config = {
 	},
 
 	-- Paneles de datos propios del hueco central (ElvUI los guarda en ajustes globales)
+	-- Fuente propia incluida en el addon (Media/). Las fuentes de la lista
+	-- "replace" se cambian por esta al aplicar el perfil (ElvUI, Plater, Details!).
+	font = {
+		name = 'Righteous',
+		file = [[Interface\AddOns\TomasUI\Media\Righteous-Regular.ttf]],
+		replace = { 'Arial Narrow', 'Friz Quadrata TT', 'Skurri' },
+		replaceFiles = { [[Fonts\ARIALN.TTF]], [[Fonts\FRIZQT__.TTF]], [[Fonts\skurri.ttf]] },
+		-- solo en ElvUI: sus fuentes propias, también cuando están en su valor por defecto
+		replaceElvUI = { 'PT Sans Narrow', 'Expressway' },
+	},
+
 	customPanels = {
-		TomasUI_FPS = { width = 54, height = 36, numPoints = 1, growth = 'HORIZONTAL', backdrop = false, panelTransparency = true, border = false, fonts = { enable = true, font = 'Arial Narrow', fontSize = 12, fontOutline = 'SHADOW' } },
-		TomasUI_Dur = { width = 54, height = 36, numPoints = 1, growth = 'HORIZONTAL', backdrop = false, panelTransparency = true, border = false, fonts = { enable = true, font = 'Arial Narrow', fontSize = 12, fontOutline = 'SHADOW' } },
+		TomasUI_FPS = { width = 54, height = 36, numPoints = 1, growth = 'HORIZONTAL', backdrop = false, panelTransparency = true, border = false, fonts = { enable = true, font = 'Righteous', fontSize = 12, fontOutline = 'SHADOW' } },
+		TomasUI_Dur = { width = 54, height = 36, numPoints = 1, growth = 'HORIZONTAL', backdrop = false, panelTransparency = true, border = false, fonts = { enable = true, font = 'Righteous', fontSize = 12, fontOutline = 'SHADOW' } },
 	},
 
 	-- Swing timer de Blizzard en el hueco de la barra de lanzamiento del jugador

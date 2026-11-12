@@ -1,5 +1,12 @@
 # Cambios
 
+## v1.2.0 — 2026-11-12
+
+- La fuente **Righteous** viene incluida en el addon (`Media/`, licencia OFL): ya no hace falta tocar la carpeta `Fonts` del juego.
+- Al aplicar, todo pasa a Righteous: en ElvUI, Plater y Details! lo que usaba Arial Narrow o Friz Quadrata, y en ElvUI también PT Sans Narrow y Expressway (incluidos los valores por defecto: placas, bocadillos, nombres y números de daño).
+- Righteous aparece en las listas de fuentes de ElvUI, Plater y Details!.
+- Queda con la fuente de Blizzard lo que el addon no puede cambiar: la pantalla de selección de personajes y el texto de combate sobre ti (daño y curación recibidos).
+
 ## v1.1.0 — 2026-11-12
 
 - El pack incluye el perfil de **Details!** (aspecto, barras de abajo arriba…): se importa como perfil `TomasUI` al aplicar y se exporta con `/tui export`.
