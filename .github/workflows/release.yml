@@ -29,23 +29,47 @@ jobs:
           fi
           TAG=$(grep -m1 -oE '^## v[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | sed 's/^## //')
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          if [ -z "$TAG" ] || git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-            echo "release=false" >> "$GITHUB_OUTPUT"
-          else
+          # Se publica si esa versión aún no tiene release
+          if [ -n "$TAG" ] && ! gh release view "$TAG" >/dev/null 2>&1; then
             echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
           fi
+          # La etiqueta solo se crea si no existe
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Crear etiqueta
-        if: steps.version.outputs.release == 'true' && !startsWith(github.ref, 'refs/tags/')
+        if: steps.version.outputs.release == 'true' && steps.version.outputs.tag_exists != 'true' && !startsWith(github.ref, 'refs/tags/')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.version.outputs.tag }}" -m "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
-      # Empaqueta el addon (sustituye @project-version@ por la etiqueta) y crea la release de GitHub
-      - name: Empaquetar y publicar
+      # Empaqueta el addon: carpeta TomasUI con la versión puesta en el .toc
+      - name: Empaquetar
         if: steps.version.outputs.release == 'true'
-        uses: BigWigsMods/packager@v2
-        env:
-          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+        id: pack
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${TAG#v}"
+          mkdir -p dist/TomasUI
+          cp TomasUI.toc *.lua dist/TomasUI/
+          sed -i "s/@project-version@/$VERSION/" dist/TomasUI/TomasUI.toc
+          (cd dist && zip -r "TomasUI-$TAG.zip" TomasUI)
+          # Notas de la release: el apartado de esta versión en CHANGELOG.md
+          awk -v tag="$TAG" '$0 ~ "^## "tag {p=1; next} /^## v/ {p=0} p' CHANGELOG.md > dist/notes.md
+          echo "zip=dist/TomasUI-$TAG.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar release
+        if: steps.version.outputs.release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: TomasUI ${{ steps.version.outputs.tag }}
+          body_path: dist/notes.md
+          files: ${{ steps.pack.outputs.zip }}
