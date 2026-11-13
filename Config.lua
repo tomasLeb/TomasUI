@@ -25,6 +25,23 @@ ns.Config = {
 		['datatexts.panels.RightChatDataPanel.enable'] = false,
 		['chat.hideVoiceButtons'] = true, -- sin el altavoz de canales de chat
 		['chat.editBoxPosition'] = 'ABOVE_CHAT', -- escribir encima del chat: no tapa mensajes
+
+		-- Mascota con el mismo alto que jugador y objetivo: vida y poder de 21 cada una
+		-- (sin esto ElvUI le da 36 y la vida queda más baja que el poder)
+		['unitframe.units.pet.height'] = 42,
+
+		-- Nivel del objetivo fuera del marco, a la izquierda de la vida, en color de
+		-- dificultad. Va pegado al marco (210 de ancho): xOffset = -(210 + 4) lo deja
+		-- 4 px a su izquierda; yOffset 10 lo centra en la mitad de arriba (la vida).
+		['unitframe.units.target.customTexts.TomasUI_Nivel.enable'] = true,
+		['unitframe.units.target.customTexts.TomasUI_Nivel.text_format'] = '[difficultycolor][level]',
+		['unitframe.units.target.customTexts.TomasUI_Nivel.attachTextTo'] = 'Frame',
+		['unitframe.units.target.customTexts.TomasUI_Nivel.justifyH'] = 'RIGHT',
+		['unitframe.units.target.customTexts.TomasUI_Nivel.xOffset'] = -214,
+		['unitframe.units.target.customTexts.TomasUI_Nivel.yOffset'] = 10,
+		['unitframe.units.target.customTexts.TomasUI_Nivel.size'] = 14,
+		['unitframe.units.target.customTexts.TomasUI_Nivel.font'] = 'Righteous',
+		['unitframe.units.target.customTexts.TomasUI_Nivel.fontOutline'] = 'SHADOW',
 	},
 
 	-- Se fuerzan encima de los ajustes privados de ElvUI (por personaje) al aplicar
@@ -32,6 +49,12 @@ ns.Config = {
 		['general.minimap.hideTracking'] = true,
 		['general.minimap.hideCalendar'] = false,
 		['general.totemTracker'] = false,
+	},
+
+	-- Se fuerzan encima del perfil TomasUI de Plater al entrar al juego
+	platerOverrides = {
+		['plate_config.friendlyplayer.actorname_use_class_color'] = true, -- nombres de aliados en color de clase
+		['plate_config.enemyplayer.actorname_use_class_color'] = true, -- y de enemigos
 	},
 
 	-- Ajustes globales de ElvUI (no van en las exportaciones de perfil)
@@ -70,6 +93,24 @@ ns.Config = {
 	-- (el modo edición guarda la altura como (altura - 400) / 10 -> 19)
 	editMode = {
 		objectiveTracker = { point = 'TOPRIGHT', relativePoint = 'TOPRIGHT', x = -3, y = -300, heightValue = 19 },
+	},
+
+	-- Plater, jugadores aliados: "solo nombre" (sin barra ni auras), salvo con una
+	-- especialización de sanador (el árbol con más puntos), que muestra sus barras de vida
+	-- (árboles de sanador por clase, en el orden de la ventana de talentos)
+	friendlyPlates = {
+		nameOnly = true, barsForHealers = true,
+		healerTrees = { PRIEST = { 1, 2 }, PALADIN = { 1 }, DRUID = { 3 }, SHAMAN = { 3 } },
+	},
+
+	-- Plater, "solo nombre": halo detrás del nombre de los aliados por debajo de
+	-- threshold de vida (0.5 = 50 %). color = { r, g, b, opacidad }
+	lowHealthGlow = {
+		threshold = 0.5,
+		color = { 1, 0.15, 0.1, 0.8 },
+		-- texture = ruta de otra textura; sin ella, la "Spark" de ElvUI
+		blend = 'ADD',
+		padX = 14, padY = 6, -- cuánto sobresale del nombre
 	},
 
 	-- Details!: una sola ventana abajo a la derecha (10 filas de 13 + 2)

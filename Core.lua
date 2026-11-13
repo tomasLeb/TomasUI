@@ -24,6 +24,35 @@ local function SetPath(t, path, value)
 	t[keys[#keys]] = value
 end
 
+-- Lee el valor de t en la ruta "a.b.c" (nil si falta algún tramo)
+local function GetPath(t, path)
+	for key in string.gmatch(path, '[^.]+') do
+		if type(t) ~= 'table' then return nil end
+		t = t[key]
+	end
+	return t
+end
+
+-- Al entrar: si el perfil activo es el nuestro y le falta algún ajuste forzado
+-- (p. ej. añadido en una versión nueva), lo escribimos sin reimportar todo el perfil.
+-- Los de marcos de unidad se ven al momento; el resto tras el siguiente /reload.
+function ns.ApplyLiveOverrides()
+	local cfg = ActiveConfig()
+	local E = ElvUI and ElvUI[1]
+	if not (cfg and E and E.db) then return end
+	local unitframes = false
+	for path, value in pairs(cfg.profileOverrides or {}) do
+		if GetPath(E.db, path) ~= value then
+			SetPath(E.db, path, value)
+			if path:find('^unitframe%.') then unitframes = true end
+		end
+	end
+	if unitframes and not InCombatLockdown() then
+		local UF = E:GetModule('UnitFrames', true)
+		if UF and UF.Update_AllFrames then pcall(UF.Update_AllFrames, UF) end
+	end
+end
+
 -- Config activa solo si el personaje usa el perfil de TomasUI en ElvUI
 local function ActiveConfig()
 	local E = ElvUI and ElvUI[1]
@@ -635,6 +664,7 @@ f:SetScript('OnEvent', function(_, event, arg1, arg2)
 				ns.ApplyEditModeLayout()
 				pcall(ns.ApplyEditModeTweaks)
 			end
+			pcall(ns.ApplyLiveOverrides)
 			ns.PlaceSwingTimer()
 			ns.HideClassBar()
 			ns.SetupHealthSpark()
@@ -668,6 +698,9 @@ SlashCmdList.TOMASUI = function(msg)
 			TomasUIDB.noEditModeSwitch = nil
 			ns.ApplyEditModeLayout(true)
 		end
+	elseif cmd == 'rol' then
+		Print(ns.FriendlyPlatesStatus())
+		ns.UpdateFriendlyPlates()
 	elseif cmd == 'autor' then
 		TomasUIDB.author = not TomasUIDB.author
 		Print('Modo autor ' .. (TomasUIDB.author and 'ACTIVADO (no se te pedirá aplicar el perfil).' or 'desactivado.'))
@@ -687,10 +720,477 @@ SlashCmdList.TOMASUI = function(msg)
 		Print('v' .. version .. ' · Comandos:')
 		print('  /tui aplicar — aplica el perfil empaquetado ahora')
 		print('  /tui edicion [off] — elegir la distribución del modo edición según la clase (o desactivarlo)')
+		print('  /tui rol — especialización detectada y modo de las placas aliadas')
 		print('  /tui escala [auto|propia] — igualar la escala del autor o mantener la tuya')
 		print('  /tui export — (autor) exporta tus perfiles actuales para publicar una versión nueva')
 		print('  /tui autor — (autor) no pedir aplicar el perfil en este PC')
 		print(format('  Perfil empaquetado: %s · aplicado en este personaje: %s',
 			ns.VersionLabel(ns.Data.version), TomasUICharDB.applied and ns.VersionLabel(TomasUICharDB.applied) or 'ninguno'))
 	end
+end
+
+-- Plater: con "mostrar nombre de hermandad", Plater añade "<hermandad>" como segunda
+-- línea del nombre (mismo color y tamaño) y deja las auras ancladas a la barra, así
+-- que quedan tapadas. Lo sustituimos por un texto propio para la hermandad (tamaño 12,
+-- dorado de los títulos de PNJ amistosos) entre el nombre y la barra, y anclamos las
+-- auras justo encima del nombre. En "solo nombre" no se muestran auras.
+do
+	local GUILD_SIZE = nil -- nil: mismo tamaño que el nombre; un número fija el tamaño
+	local GUILD_RAISE = 2 -- píxeles extra entre la barra y la hermandad (y el nombre encima)
+
+	local function WantsGuild(plateFrame)
+		local cfg = plateFrame and plateFrame.PlateConfig
+		return cfg and cfg.show_guild_name and plateFrame.playerGuildName
+			and not plateFrame.IsFriendlyPlayerWithoutHealthBar and true or false
+	end
+
+	-- Sin barra de vida ("solo nombre"), sin auras. Plater las oculta al pasar a ese
+	-- modo, pero a veces se quedan visibles; las ocultamos siempre que falte la barra.
+	local function HideAurasWithoutBar(uf)
+		if uf.healthBar and not uf.healthBar:IsShown() then
+			if uf.BuffFrame and uf.BuffFrame:IsShown() then uf.BuffFrame:Hide() end
+			if uf.BuffFrame2 and uf.BuffFrame2:IsShown() then uf.BuffFrame2:Hide() end
+		end
+	end
+
+	local function GuildColor()
+		local Plater = _G.Plater
+		local pc = Plater and Plater.db and Plater.db.profile.plate_config
+		local c = pc and pc.friendlynpc and pc.friendlynpc.big_actortitle_text_color
+		if type(c) == 'table' then return c[1] or 1, c[2] or 0.8, c[3] or 0, c[4] or 1 end
+		return 1, 0.8, 0, 1
+	end
+
+	-- Righteous no tiene letras cirílicas: si Plater translitera los nombres
+	-- (opción "Translit"), hacemos lo mismo con títulos de PNJ y hermandades.
+	local function Translit(s)
+		if type(s) ~= 'string' or s == '' then return s end
+		if issecretvalue and issecretvalue(s) then return s end
+		local Plater = _G.Plater
+		local profile = Plater and Plater.db and Plater.db.profile
+		if not (profile and profile.use_name_translit) then return s end
+		local LT = LibStub and LibStub('LibTranslit-1.0', true)
+		if not LT then return s end
+		return LT:Transliterate(s, '*')
+	end
+
+	local function GuildString(uf)
+		if not uf.TUIGuild then
+			uf.TUIGuild = uf.healthBar:CreateFontString(nil, 'OVERLAY')
+		end
+		return uf.TUIGuild
+	end
+
+	-- Plater coloca el nombre y las auras desde varios sitios y en distinto orden;
+	-- en vez de corregir después de cada función, nos enganchamos al SetPoint del
+	-- nombre y del marco de auras de cada placa y lo corregimos al instante.
+	local busy = false
+
+	local function PlaceAuras(uf, plateFrame)
+		local Plater = _G.Plater
+		local name = plateFrame.CurrentUnitNameString
+		local profile = Plater and Plater.db and Plater.db.profile
+		if not (profile and name) then return end
+		local a1, a2 = profile.aura_frame1_anchor, profile.aura_frame2_anchor
+		busy = true
+		if uf.BuffFrame then
+			uf.BuffFrame:ClearAllPoints()
+			uf.BuffFrame:SetPoint('BOTTOM', name, 'TOP', (a1 and a1.x) or 0, 2)
+		end
+		if uf.BuffFrame2 then
+			uf.BuffFrame2:ClearAllPoints()
+			uf.BuffFrame2:SetPoint('BOTTOM', name, 'TOP', (a2 and a2.x) or 0, 2 + ((a2 and a1) and (a2.y - a1.y) or 0))
+		end
+		busy = false
+	end
+
+	-- La hermandad ocupa el sitio que Plater da al nombre; el nombre sube encima
+	local function PlaceName(uf, plateFrame, p, rel, rp, x, y)
+		local g, name = uf.TUIGuild, plateFrame.CurrentUnitNameString
+		if not (g and name and p) or rel == g then return end
+		busy = true
+		g:ClearAllPoints()
+		g:SetPoint(p, rel, rp, x, (y or 0) + GUILD_RAISE)
+		name:ClearAllPoints()
+		name:SetPoint('BOTTOM', g, 'TOP', 0, 1)
+		busy = false
+	end
+
+	-- Cualquier placa con barra (jugadores y PNJ, aliados o enemigos) y sin nuestra
+	-- hermandad: el nombre, GUILD_RAISE más arriba que donde lo pone Plater
+	local function RaisePlainName(plateFrame)
+		local uf = plateFrame and plateFrame.unitFrame
+		return uf and uf.healthBar and uf.healthBar:IsShown()
+			and not plateFrame.IsFriendlyPlayerWithoutHealthBar and not plateFrame.IsNpcWithoutHealthBar
+			and not WantsGuild(plateFrame) or false
+	end
+
+	local function RaiseName(uf, plateFrame, p, rel, rp, x, y)
+		local name = plateFrame.CurrentUnitNameString
+		if not (name and p) or rel == uf.TUIGuild then return end
+		busy = true
+		name:SetPoint(p, rel, rp, x, (y or 0) + GUILD_RAISE)
+		busy = false
+		uf.TUINameRaised = true
+	end
+
+	-- "Solo nombre": halo detrás del nombre de los aliados con poca vida. La vida de
+	-- otros jugadores es un valor oculto para los addons; una curva escalonada que
+	-- evalúa el propio juego decide la opacidad (como la línea de vida de ElvUI).
+	local glowCurve
+	local function GlowCurve(cfg)
+		if not glowCurve and C_CurveUtil and C_CurveUtil.CreateCurve and Enum.LuaCurveType then
+			glowCurve = C_CurveUtil.CreateCurve()
+			glowCurve:SetType(Enum.LuaCurveType.Step)
+			glowCurve:AddPoint(0, (cfg.color and cfg.color[4]) or 0.8)
+			glowCurve:AddPoint(cfg.threshold or 0.5, 0)
+		end
+		return glowCurve
+	end
+
+	local function UpdateGlow(plateFrame)
+		local uf = plateFrame and plateFrame.unitFrame
+		local cfg = ns.Config.lowHealthGlow
+		if not (uf and cfg) then return end
+		local glow = uf.TUIGlow
+		local unit = uf.namePlateUnitToken or plateFrame.namePlateUnitToken
+		local name = plateFrame.CurrentUnitNameString
+		local wanted = unit and name and plateFrame.IsFriendlyPlayerWithoutHealthBar
+			and plateFrame.actorType == 'friendlyplayer'
+		-- En combate el juego oculta también si está muerto: compararlo da error,
+		-- así que solo lo usamos cuando es un valor normal
+		if wanted then
+			local ok, dead = pcall(UnitIsDeadOrGhost, unit)
+			if ok and not (issecretvalue and issecretvalue(dead)) and dead == true then wanted = false end
+		end
+		local curve = wanted and GlowCurve(cfg)
+		local ok, alpha
+		if curve and UnitHealthPercent then ok, alpha = pcall(UnitHealthPercent, unit, false, curve) end
+		if not (ok and type(alpha) ~= 'nil') then -- type() sirve también con valores ocultos
+			if glow then glow:Hide() end
+			return
+		end
+		if not glow then
+			glow = uf:CreateTexture(nil, 'BACKGROUND')
+			-- por defecto, la textura "Spark" de ElvUI (un punto suave que estirado hace de halo)
+			local E = ElvUI and ElvUI[1]
+			glow:SetTexture(cfg.texture or (E and E.Media and E.Media.Textures and E.Media.Textures.Spark))
+			glow:SetBlendMode(cfg.blend or 'ADD')
+			uf.TUIGlow = glow
+		end
+		local px, py = cfg.padX or 14, cfg.padY or 6
+		glow:ClearAllPoints()
+		glow:SetPoint('TOPLEFT', name, 'TOPLEFT', -px, py)
+		glow:SetPoint('BOTTOMRIGHT', name, 'BOTTOMRIGHT', px, -py)
+		local c = cfg.color or { 1, 0.15, 0.1, 0.8 }
+		glow:SetVertexColor(c[1], c[2], c[3], alpha)
+		glow:Show()
+	end
+	ns.UpdateLowHealthGlow = UpdateGlow
+
+	-- "Solo nombre" de jugadores aliados: el nombre y debajo la hermandad en dorado
+	local function NameOnlyText(plateFrame, withGuild)
+		local uf = plateFrame.unitFrame
+		local name = plateFrame.namePlateUnitName or (uf and uf.namePlateUnitName)
+		if type(name) ~= 'string' or (issecretvalue and issecretvalue(name)) then return end
+		local text = name
+		if withGuild and plateFrame.playerGuildName then
+			local r, g, b = GuildColor()
+			text = text .. '\n' .. format('|cff%02x%02x%02x', r * 255, g * 255, b * 255)
+				.. '<' .. Translit(plateFrame.playerGuildName) .. '>|r'
+		end
+		return text
+	end
+
+	local function UpdateNameOnlyText(plateFrame)
+		local nameString = plateFrame and plateFrame.CurrentUnitNameString
+		if not (nameString and plateFrame.IsFriendlyPlayerWithoutHealthBar and plateFrame.actorType == 'friendlyplayer') then return end
+		if not (plateFrame.PlateConfig and plateFrame.PlateConfig.show_guild_name and plateFrame.playerGuildName) then return end
+		local text = NameOnlyText(plateFrame, true)
+		if text then nameString:SetText(text) end
+	end
+
+	local function HookPlate(uf, plateFrame)
+		uf.TUIPlate = plateFrame
+		if uf.TUIHooked then return end
+		uf.TUIHooked = true
+		local name = plateFrame.CurrentUnitNameString
+		if name then
+			hooksecurefunc(name, 'SetPoint', function(_, p, rel, rp, x, y)
+				local pf = uf.TUIPlate
+				if busy or not pf then return end
+				-- Plater acaba de colocar el nombre: aún no está subido
+				uf.TUINameRaised = false
+				if WantsGuild(pf) then
+					PlaceName(uf, pf, p, rel, rp, x, y)
+					PlaceAuras(uf, pf)
+				elseif RaisePlainName(pf) then
+					RaiseName(uf, pf, p, rel, rp, x, y)
+				end
+			end)
+		end
+		for _, key in ipairs({ 'BuffFrame', 'BuffFrame2' }) do
+			local bf = uf[key]
+			if bf then
+				hooksecurefunc(bf, 'SetPoint', function()
+					local pf = uf.TUIPlate
+					if busy or not pf or not WantsGuild(pf) then return end
+					PlaceAuras(uf, pf)
+				end)
+				-- Plater muestra las auras antes de ocultar la barra o después de
+				-- mostrarla: comprobando la barra en cada Show no fallamos ningún orden
+				local function Check() HideAurasWithoutBar(uf) end
+				hooksecurefunc(bf, 'Show', Check)
+				hooksecurefunc(bf, 'SetShown', Check)
+			end
+		end
+	end
+
+	local function Layout(plateFrame)
+		local uf = plateFrame and plateFrame.unitFrame
+		if not (_G.Plater and uf and uf.healthBar) then return end
+		local name = plateFrame.CurrentUnitNameString
+		if not name then return end
+		HookPlate(uf, plateFrame)
+		HideAurasWithoutBar(uf)
+		UpdateNameOnlyText(plateFrame)
+		UpdateGlow(plateFrame)
+		if not WantsGuild(plateFrame) then
+			if uf.TUIGuild then uf.TUIGuild:Hide() end
+			-- solo una vez por cada vez que Plater coloca el nombre, para no ir sumando
+			if RaisePlainName(plateFrame) and not uf.TUINameRaised then
+				RaiseName(uf, plateFrame, name:GetPoint(1))
+			end
+			return
+		end
+		local g = GuildString(uf)
+		local file, size, flags = name:GetFont()
+		-- GUILD_SIZE = nil: mismo tamaño que el nombre
+		if file then g:SetFont(file, GUILD_SIZE or size, flags or '') end
+		g:SetShadowColor(name:GetShadowColor())
+		g:SetShadowOffset(name:GetShadowOffset())
+		g:SetTextColor(GuildColor())
+		g:SetText('<' .. Translit(plateFrame.playerGuildName) .. '>')
+		g:Show()
+		PlaceName(uf, plateFrame, name:GetPoint(1))
+		PlaceAuras(uf, plateFrame)
+	end
+
+	local hooked = false
+	local function HookPlater()
+		local Plater = _G.Plater
+		if hooked or not (Plater and Plater.UpdateUnitName and Plater.UpdatePlateSize and Plater.AddGuildNameToPlayerName) then return end
+		hooked = true
+		-- sin segunda línea en el nombre cuando ponemos nuestro texto de hermandad
+		local original = Plater.AddGuildNameToPlayerName
+		Plater.AddGuildNameToPlayerName = function(plateFrame, ...)
+			if WantsGuild(plateFrame) then return end
+			-- "solo nombre": Plater pone la hermandad como segunda línea del nombre;
+			-- la dejamos ahí pero en dorado (mismo tamaño que el nombre)
+			if plateFrame and plateFrame.IsFriendlyPlayerWithoutHealthBar and plateFrame.playerGuildName
+				and plateFrame.CurrentUnitNameString then
+				local text = NameOnlyText(plateFrame, true)
+				if text then
+					plateFrame.CurrentUnitNameString:SetText(text)
+					return
+				end
+			end
+			return original(plateFrame, ...)
+		end
+		-- títulos de PNJ (p. ej. "<Esbirro de Бобр>") transliterados como los nombres
+		if Plater.GetActorSubName then
+			local originalSub = Plater.GetActorSubName
+			Plater.GetActorSubName = function(...)
+				return Translit(originalSub(...))
+			end
+		end
+		local function After(plateFrame) pcall(Layout, plateFrame) end
+		hooksecurefunc(Plater, 'UpdatePlateSize', After)
+		hooksecurefunc(Plater, 'UpdateUnitName', After)
+		if Plater.UpdatePlateText then hooksecurefunc(Plater, 'UpdatePlateText', After) end
+	end
+
+	local f = CreateFrame('Frame')
+	f:RegisterEvent('PLAYER_LOGIN')
+	f:SetScript('OnEvent', HookPlater)
+	HookPlater()
+
+	-- vida de las placas: actualizar el halo
+	local g = CreateFrame('Frame')
+	for _, ev in ipairs({ 'UNIT_HEALTH', 'UNIT_MAXHEALTH', 'NAME_PLATE_UNIT_ADDED' }) do pcall(g.RegisterEvent, g, ev) end
+	g:SetScript('OnEvent', function(_, event, unit)
+		if type(unit) ~= 'string' or not unit:find('^nameplate') then return end
+		local plate = C_NamePlate and C_NamePlate.GetNamePlateForUnit and C_NamePlate.GetNamePlateForUnit(unit)
+		if not (plate and plate.unitFrame) then return end
+		pcall(UpdateGlow, plate)
+	end)
+end
+
+-- Plater: jugadores aliados en "solo nombre", salvo con especialización de sanador,
+-- que muestra sus barras de vida. Se cambia la opción "Only Show Player Name" del
+-- perfil TomasUI de Plater al entrar y al cambiar de especialización o talentos.
+do
+	-- Puntos gastados en un árbol de talentos clásico. GetTalentTabInfo cambia de
+	-- formato según el cliente: (nombre, icono, puntos, ...) o (id, nombre, desc,
+	-- icono, puntos, ...). Si no da puntos, sumamos los rangos de sus talentos.
+	local function TreePoints(tab)
+		local r = { GetTalentTabInfo(tab) }
+		local name, points
+		if type(r[1]) == 'number' then name, points = r[2], r[5] else name, points = r[1], r[3] end
+		if type(points) ~= 'number' and GetNumTalents and GetTalentInfo then
+			points = 0
+			for i = 1, (GetNumTalents(tab) or 0) do
+				local rank = select(5, GetTalentInfo(tab, i))
+				if type(rank) == 'number' then points = points + rank end
+			end
+		end
+		return type(name) == 'string' and name or ('árbol ' .. tab), type(points) == 'number' and points or 0
+	end
+
+	-- WoW Forever: los tres árboles clásicos son grupos de un único árbol de
+	-- rasgos (C_Traits), en el orden de la ventana de talentos.
+	-- Devuelve una lista { {name, points}, ... } o nil.
+	local function ByOrder(a, b) return (a.orderIndex or 0) < (b.orderIndex or 0) end
+	local function TraitTrees()
+		if not (C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_Traits
+			and C_Traits.GetGroupDisplayInfoByTreeID and C_Traits.GetGroupCurrencyInfo) then return end
+		local configID = C_ClassTalents.GetActiveConfigID()
+		local config = configID and C_Traits.GetConfigInfo(configID)
+		local treeID = config and config.treeIDs and config.treeIDs[1]
+		if not treeID then return end
+		local groups = C_Traits.GetGroupDisplayInfoByTreeID(treeID)
+		if type(groups) ~= 'table' or #groups == 0 then return end
+		table.sort(groups, ByOrder)
+		local list = {}
+		for i, g in ipairs(groups) do
+			local info = C_Traits.GetGroupCurrencyInfo(configID, { g.groupID })
+			info = info and info[1]
+			local c = info and info.currencyInfos and info.currencyInfos[1]
+			list[i] = { name = g.displayName or ('árbol ' .. i), points = (c and type(c.spent) == 'number') and c.spent or 0 }
+		end
+		return list
+	end
+
+	-- Árboles clásicos de toda la vida (otros clientes)
+	local function ClassicTrees()
+		if not GetTalentTabInfo then return end
+		local list = {}
+		for tab = 1, ((GetNumTalentTabs and GetNumTalentTabs()) or 3) do
+			local ok, name, points = pcall(TreePoints, tab)
+			if ok then list[#list + 1] = { name = name, points = points } end
+		end
+		return #list > 0 and list or nil
+	end
+
+	-- El árbol con más puntos decide el rol
+	local function TreeRole()
+		local ok, list = pcall(TraitTrees)
+		if not (ok and list) then list = ClassicTrees() end
+		if not list then return end
+		local _, class = UnitClass('player')
+		local healers = (ns.Config.friendlyPlates and ns.Config.friendlyPlates.healerTrees or {})[class]
+		local best, bestPoints, bestName, detail = nil, 0, nil, {}
+		for i, t in ipairs(list) do
+			detail[#detail + 1] = format('%s %d', t.name, t.points)
+			if t.points > bestPoints then best, bestPoints, bestName = i, t.points, t.name end
+		end
+		if not best then return nil, nil, table.concat(detail, ' / ') end
+		local isHealer = false
+		for _, t in ipairs(healers or {}) do if t == best then isHealer = true end end
+		return isHealer and 'HEALER' or 'DAMAGER', bestName, table.concat(detail, ' / ')
+	end
+
+	-- Especialización moderna (por si el cliente la tiene)
+	local function ModernRole()
+		local S = C_SpecializationInfo
+		local getSpec = (S and S.GetSpecialization) or GetSpecialization
+		local getInfo = (S and S.GetSpecializationInfo) or GetSpecializationInfo
+		local spec = getSpec and getSpec()
+		if not (spec and spec > 0) then return end
+		local name, role
+		if getInfo then
+			local _, n, _, _, r = getInfo(spec)
+			name, role = n, r
+		end
+		if not role and GetSpecializationRole then role = GetSpecializationRole(spec) end
+		return role, name
+	end
+
+	local function SpecRole()
+		local role, name, detail = TreeRole()
+		if role then return role, name, detail end
+		local mrole, mname = ModernRole()
+		return mrole, mname, detail
+	end
+
+	local function Wanted()
+		local cfg = ns.Config.friendlyPlates
+		if not cfg then return end
+		local role = SpecRole()
+		if cfg.barsForHealers and role == 'HEALER' then return false end
+		return cfg.nameOnly and true or false
+	end
+
+	-- Ajustes forzados de Plater (Config.platerOverrides), sobre el perfil TomasUI
+	function ns.ApplyPlaterOverrides()
+		local Plater = _G.Plater
+		local db = Plater and Plater.db
+		local overrides = ns.Config.platerOverrides
+		if not (overrides and db and db.profile and db.GetCurrentProfile) then return end
+		if db:GetCurrentProfile() ~= ns.Config.profileName then return end
+		local changed = false
+		for path, value in pairs(overrides) do
+			local t, keys = db.profile, { strsplit('.', path) }
+			for i = 1, #keys - 1 do
+				if type(t[keys[i]]) ~= 'table' then t[keys[i]] = {} end
+				t = t[keys[i]]
+			end
+			if t[keys[#keys]] ~= value then
+				t[keys[#keys]] = value
+				changed = true
+			end
+		end
+		if changed then
+			if Plater.RefreshDBUpvalues then pcall(Plater.RefreshDBUpvalues) end
+			if Plater.UpdateAllPlates then pcall(Plater.UpdateAllPlates, true) end
+		end
+	end
+
+	function ns.UpdateFriendlyPlates()
+		local Plater = _G.Plater
+		local db = Plater and Plater.db
+		if not (db and db.profile and db.profile.plate_config and db.GetCurrentProfile) then return end
+		if db:GetCurrentProfile() ~= ns.Config.profileName then return end
+		local want = Wanted()
+		if want == nil then return end
+		local pc = db.profile.plate_config.friendlyplayer
+		if not pc or pc.only_thename == want then return end
+		pc.only_thename = want
+		if Plater.UpdateAllPlates then pcall(Plater.UpdateAllPlates) end
+	end
+
+	function ns.FriendlyPlatesStatus()
+		local role, name, detail = SpecRole()
+		local want = Wanted()
+		return format('talentos: %s · principal: %s · rol: %s · aliados: %s',
+			tostring(detail or '?'), tostring(name or '?'), tostring(role or '?'),
+			want == nil and 'sin cambios' or (want and 'solo nombre' or 'barras de vida'))
+	end
+
+	local function Schedule() C_Timer.After(0.5, ns.UpdateFriendlyPlates) end
+
+	local f = CreateFrame('Frame')
+	for _, ev in ipairs({ 'PLAYER_ENTERING_WORLD', 'PLAYER_SPECIALIZATION_CHANGED', 'ACTIVE_TALENT_GROUP_CHANGED',
+		'PLAYER_TALENT_UPDATE', 'CHARACTER_POINTS_CHANGED', 'TRAIT_CONFIG_UPDATED',
+		'TRAIT_TREE_CURRENCY_INFO_UPDATED', 'ACTIVE_COMBAT_CONFIG_CHANGED' }) do
+		pcall(f.RegisterEvent, f, ev) -- no todos los eventos existen en todos los clientes
+	end
+	f:SetScript('OnEvent', function(_, event, unit)
+		if event == 'PLAYER_SPECIALIZATION_CHANGED' and unit and unit ~= 'player' then return end
+		Schedule()
+		if event == 'PLAYER_ENTERING_WORLD' then
+			C_Timer.After(3, ns.UpdateFriendlyPlates)
+			C_Timer.After(3, function() pcall(ns.ApplyPlaterOverrides) end)
+		end
+	end)
 end

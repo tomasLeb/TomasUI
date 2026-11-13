@@ -46,11 +46,12 @@ La fuente Righteous va incluida y se aplica sola. Lo único que un addon no pued
 | `/tui edicion off` | Deja de cambiarla automáticamente |
 | `/tui escala` | Muestra la escala actual y la del autor |
 | `/tui escala propia` / `auto` | Mantener tu escala de ElvUI / usar la del autor (por defecto) |
+| `/tui rol` | Talentos detectados y modo de las placas de aliados (solo nombre o barras) |
 
 ## Qué se toca al aplicar
 
 - **ElvUI:** perfil `TomasUI` (se crea o sobrescribe y se activa), ajustes privados del personaje, escala de UI y dos paneles de datos propios.
-- **Plater:** perfil `TomasUI`.
+- **Plater:** perfil `TomasUI`. Al entrar al juego, TomasUI ajusta además las placas de jugadores aliados según tus talentos (ver `CHANGELOG.md`, v1.3.0).
 - **Modo edición:** crea `TomasUI - Melee` y `TomasUI - Ranged` si no existen (no toca tus otras distribuciones).
 - **Details!:** perfil `TomasUI` (tu aspecto de Details!) y una sola ventana abajo a la derecha.
 

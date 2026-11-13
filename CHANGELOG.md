@@ -1,5 +1,22 @@
 # Cambios
 
+## v1.3.0 — 2026-11-13
+
+### Plater
+- **Jugadores aliados en "solo nombre"**, sin barra ni auras. Si tu árbol de talentos con más puntos es de sanador (Disciplina o Sagrado en sacerdote, Sagrado en paladín, Restauración en druida y chamán), se ven sus barras de vida. Cambia solo al gastar o cambiar puntos. `/tui rol` muestra lo que detecta.
+- En "solo nombre", **halo rojo detrás del nombre** de los aliados por debajo del 50 % de vida (también en combate). Usa la textura "Spark" de ElvUI.
+- En "solo nombre" ya no se quedan auras visibles por error.
+- **Nombres en color de clase** (aliados y enemigos), forzado sobre el perfil.
+- **Hermandad** de jugadores en su propia línea, del mismo tamaño que el nombre, y nombre y hermandad 2 px más separados de la barra. En las placas con barra sin hermandad (jugadores y PNJ), el nombre también sube 2 px.
+- **Texto en ruso:** los títulos de PNJ (p. ej. `<Esbirro de …>`) y las hermandades se pasan a letras latinas como los nombres, cuando Plater tiene activada esa opción (Righteous no tiene letras cirílicas).
+
+### ElvUI
+- **Nivel del objetivo** a la izquierda de su barra de vida, fuera del marco, en color de dificultad.
+- **Marco de mascota** con el mismo alto que jugador y objetivo (42): vida y poder iguales.
+
+### Interno
+- Los ajustes forzados de ElvUI y Plater se aplican al entrar al juego si faltan en el perfil, sin tener que reimportarlo.
+
 ## v1.2.1 — 2026-11-13
 
 - La caja para escribir en el chat se abre encima del chat, sin tapar mensajes.
