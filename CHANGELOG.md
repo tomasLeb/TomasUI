@@ -1,5 +1,9 @@
 # Cambios
 
+## v1.3.4 — 2026-11-13
+
+- Plater: el escudito gris de "no interrumpible" va en el borde contrario al icono del hechizo (a la derecha con tu perfil), para que no lo tape.
+
 ## v1.3.3 — 2026-11-13
 
 - Plater: en todas las placas con barra, las auras quedan justo encima del nombre, con la misma separación que entre el nombre y la barra (antes solo con hermandad; sin ella quedaban pegadas al nombre).

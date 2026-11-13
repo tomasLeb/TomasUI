@@ -988,6 +988,18 @@ do
 		local Plater = _G.Plater
 		if hooked or not (Plater and Plater.UpdateUnitName and Plater.UpdatePlateSize and Plater.AddGuildNameToPlayerName) then return end
 		hooked = true
+		-- Escudito de "no interrumpible": Plater lo centra en el borde de la barra de
+		-- lanzamiento del lado del icono y lo tapa; lo pasamos al borde contrario
+		if Plater.UpdateCastbarIcon then
+			hooksecurefunc(Plater, 'UpdateCastbarIcon', function(castBar)
+				local profile = Plater.db and Plater.db.profile
+				local shield = castBar and castBar.BorderShield
+				if not (profile and shield and profile.castbar_icon_customization_enabled and profile.castbar_icon_show) then return end
+				local side = profile.castbar_icon_attach_to_side == 'right' and 'left' or 'right'
+				shield:ClearAllPoints()
+				shield:SetPoint('center', castBar, side, 0, 0)
+			end)
+		end
 		-- sin segunda línea en el nombre cuando ponemos nuestro texto de hermandad
 		local original = Plater.AddGuildNameToPlayerName
 		Plater.AddGuildNameToPlayerName = function(plateFrame, ...)
