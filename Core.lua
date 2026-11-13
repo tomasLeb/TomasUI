@@ -139,6 +139,12 @@ local function ApplyElvUI()
 	end
 	for path, value in pairs(cfg.profileOverrides or {}) do SetPath(pData, path, value) end
 	D:SetImportedProfile('profile', cfg.profileName, pData, true)
+	-- ElvUI no importa algunos ajustes (D.blacklistedKeys, p. ej. chat.hideVoiceButtons):
+	-- los escribimos directamente en el perfil guardado
+	local saved = ElvDB and ElvDB.profiles and ElvDB.profiles[cfg.profileName]
+	if type(saved) == 'table' then
+		for path, value in pairs(cfg.profileOverrides or {}) do SetPath(saved, path, value) end
+	end
 
 	-- Ajustes privados (por personaje)
 	local vData = Read(data.elvPrivate, 'private')

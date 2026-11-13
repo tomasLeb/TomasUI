@@ -4,7 +4,7 @@
 local _, ns = ...
 
 ns.Data = {
-	version = 202611121610,
+	version = 202611131225,
 	ref = {
 		physW = 2560, physH = 1080,
 		uiScale = 0.7111111111111111,

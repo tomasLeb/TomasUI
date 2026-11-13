@@ -23,6 +23,8 @@ ns.Config = {
 	-- Se fuerzan encima del perfil de ElvUI al aplicar
 	profileOverrides = {
 		['datatexts.panels.RightChatDataPanel.enable'] = false,
+		['chat.hideVoiceButtons'] = true, -- sin el altavoz de canales de chat
+		['chat.editBoxPosition'] = 'ABOVE_CHAT', -- escribir encima del chat: no tapa mensajes
 	},
 
 	-- Se fuerzan encima de los ajustes privados de ElvUI (por personaje) al aplicar

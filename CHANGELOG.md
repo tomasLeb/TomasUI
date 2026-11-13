@@ -1,5 +1,12 @@
 # Cambios
 
+## v1.2.1 — 2026-11-13
+
+- La caja para escribir en el chat se abre encima del chat, sin tapar mensajes.
+- Oculto el botón de voz (altavoz) del chat.
+- Corregido: los ajustes que ElvUI no importa desde un perfil (como ocultar los botones de voz) ahora también se aplican.
+- Los que ya tengan TomasUI verán el aviso para aplicar la versión nueva.
+
 ## v1.2.0 — 2026-11-12
 
 - La fuente **Righteous** viene incluida en el addon (`Media/`, licencia OFL): ya no hace falta tocar la carpeta `Fonts` del juego.
