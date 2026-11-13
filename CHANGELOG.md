@@ -1,5 +1,9 @@
 # Cambios
 
+## v1.3.2 — 2026-11-13
+
+- Plater: corregido el nombre que a veces quedaba encima de la hermandad. Pasaba cuando Plater reutilizaba una placa que antes había estado en "solo nombre".
+
 ## v1.3.1 — 2026-11-13
 
 - Plater: la **hermandad** se muestra bajo el nombre de los jugadores (aliados y enemigos) en todos los personajes, forzado sobre el perfil. Faltaba en el perfil empaquetado.

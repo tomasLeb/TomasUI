@@ -912,13 +912,15 @@ do
 
 	local function HookPlate(uf, plateFrame)
 		uf.TUIPlate = plateFrame
-		if uf.TUIHooked then return end
-		uf.TUIHooked = true
+		-- Plater usa un texto de nombre distinto con barra y en "solo nombre", y recicla
+		-- las placas: enganchamos cada texto de nombre la primera vez que lo vemos
 		local name = plateFrame.CurrentUnitNameString
-		if name then
-			hooksecurefunc(name, 'SetPoint', function(_, p, rel, rp, x, y)
+		if name and not name.TUIHooked then
+			name.TUIHooked = true
+			hooksecurefunc(name, 'SetPoint', function(self, p, rel, rp, x, y)
 				local pf = uf.TUIPlate
-				if busy or not pf then return end
+				-- solo si es el nombre que la placa está usando ahora
+				if busy or not pf or pf.CurrentUnitNameString ~= self then return end
 				-- Plater acaba de colocar el nombre: aún no está subido
 				uf.TUINameRaised = false
 				if WantsGuild(pf) then
@@ -929,6 +931,8 @@ do
 				end
 			end)
 		end
+		if uf.TUIHooked then return end
+		uf.TUIHooked = true
 		for _, key in ipairs({ 'BuffFrame', 'BuffFrame2' }) do
 			local bf = uf[key]
 			if bf then
