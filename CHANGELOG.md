@@ -1,5 +1,9 @@
 # Cambios
 
+## v1.3.3 — 2026-11-13
+
+- Plater: en todas las placas con barra, las auras quedan justo encima del nombre, con la misma separación que entre el nombre y la barra (antes solo con hermandad; sin ella quedaban pegadas al nombre).
+
 ## v1.3.2 — 2026-11-13
 
 - Plater: corregido el nombre que a veces quedaba encima de la hermandad. Pasaba cuando Plater reutilizaba una placa que antes había estado en "solo nombre".

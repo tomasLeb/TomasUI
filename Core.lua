@@ -737,6 +737,7 @@ end
 do
 	local GUILD_SIZE = nil -- nil: mismo tamaño que el nombre; un número fija el tamaño
 	local GUILD_RAISE = 2 -- píxeles extra entre la barra y la hermandad (y el nombre encima)
+	local AURA_GAP = GUILD_RAISE -- separación entre el nombre y las auras: la misma que nombre-barra
 
 	local function WantsGuild(plateFrame)
 		local cfg = plateFrame and plateFrame.PlateConfig
@@ -795,11 +796,11 @@ do
 		busy = true
 		if uf.BuffFrame then
 			uf.BuffFrame:ClearAllPoints()
-			uf.BuffFrame:SetPoint('BOTTOM', name, 'TOP', (a1 and a1.x) or 0, 2)
+			uf.BuffFrame:SetPoint('BOTTOM', name, 'TOP', (a1 and a1.x) or 0, AURA_GAP)
 		end
 		if uf.BuffFrame2 then
 			uf.BuffFrame2:ClearAllPoints()
-			uf.BuffFrame2:SetPoint('BOTTOM', name, 'TOP', (a2 and a2.x) or 0, 2 + ((a2 and a1) and (a2.y - a1.y) or 0))
+			uf.BuffFrame2:SetPoint('BOTTOM', name, 'TOP', (a2 and a2.x) or 0, AURA_GAP + ((a2 and a1) and (a2.y - a1.y) or 0))
 		end
 		busy = false
 	end
@@ -928,6 +929,7 @@ do
 					PlaceAuras(uf, pf)
 				elseif RaisePlainName(pf) then
 					RaiseName(uf, pf, p, rel, rp, x, y)
+					PlaceAuras(uf, pf)
 				end
 			end)
 		end
@@ -938,7 +940,7 @@ do
 			if bf then
 				hooksecurefunc(bf, 'SetPoint', function()
 					local pf = uf.TUIPlate
-					if busy or not pf or not WantsGuild(pf) then return end
+					if busy or not pf or not (WantsGuild(pf) or RaisePlainName(pf)) then return end
 					PlaceAuras(uf, pf)
 				end)
 				-- Plater muestra las auras antes de ocultar la barra o después de
@@ -962,8 +964,9 @@ do
 		if not WantsGuild(plateFrame) then
 			if uf.TUIGuild then uf.TUIGuild:Hide() end
 			-- solo una vez por cada vez que Plater coloca el nombre, para no ir sumando
-			if RaisePlainName(plateFrame) and not uf.TUINameRaised then
-				RaiseName(uf, plateFrame, name:GetPoint(1))
+			if RaisePlainName(plateFrame) then
+				if not uf.TUINameRaised then RaiseName(uf, plateFrame, name:GetPoint(1)) end
+				PlaceAuras(uf, plateFrame)
 			end
 			return
 		end
