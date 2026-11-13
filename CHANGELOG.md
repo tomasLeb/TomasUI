@@ -1,5 +1,9 @@
 # Cambios
 
+## v1.3.1 — 2026-11-13
+
+- Plater: la **hermandad** se muestra bajo el nombre de los jugadores (aliados y enemigos) en todos los personajes, forzado sobre el perfil. Faltaba en el perfil empaquetado.
+
 ## v1.3.0 — 2026-11-13
 
 ### Plater

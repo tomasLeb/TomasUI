@@ -55,6 +55,8 @@ ns.Config = {
 	platerOverrides = {
 		['plate_config.friendlyplayer.actorname_use_class_color'] = true, -- nombres de aliados en color de clase
 		['plate_config.enemyplayer.actorname_use_class_color'] = true, -- y de enemigos
+		['plate_config.friendlyplayer.show_guild_name'] = true, -- hermandad bajo el nombre (aliados)
+		['plate_config.enemyplayer.show_guild_name'] = true, -- y enemigos
 	},
 
 	-- Ajustes globales de ElvUI (no van en las exportaciones de perfil)
