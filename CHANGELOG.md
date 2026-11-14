@@ -1,5 +1,9 @@
 # Cambios
 
+## v1.3.5 — 2026-11-14
+
+- Plater: el halo de vida baja en "solo nombre" aparece por debajo del 25 % de vida (antes, 50 %).
+
 ## v1.3.4 — 2026-11-13
 
 - Plater: el escudito gris de "no interrumpible" va en el borde contrario al icono del hechizo (a la derecha con tu perfil), para que no lo tape.

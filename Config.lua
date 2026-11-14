@@ -106,9 +106,9 @@ ns.Config = {
 	},
 
 	-- Plater, "solo nombre": halo detrás del nombre de los aliados por debajo de
-	-- threshold de vida (0.5 = 50 %). color = { r, g, b, opacidad }
+	-- threshold de vida (0.25 = 25 %). color = { r, g, b, opacidad }
 	lowHealthGlow = {
-		threshold = 0.5,
+		threshold = 0.25,
 		color = { 1, 0.15, 0.1, 0.8 },
 		-- texture = ruta de otra textura; sin ella, la "Spark" de ElvUI
 		blend = 'ADD',
