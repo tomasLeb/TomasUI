@@ -892,14 +892,8 @@ do
 	end
 	ns.UpdateLowHealthGlow = UpdateGlow
 
-	-- Nivel dentro del texto del nombre ("27 · Nombre"), con position = 'inline'
-	local function InlineLevel(plateFrame)
-		local cfg = ns.Config.nameOnlyLevel
-		local uf = plateFrame.unitFrame
-		local unit = uf and uf.namePlateUnitToken
-		if not (cfg and cfg.enabled and cfg.position == 'inline' and unit and plateFrame.actorType == 'friendlyplayer') then return end
-		local ok, level = pcall(UnitLevel, unit)
-		if not (ok and type(level) == 'number') or (issecretvalue and issecretvalue(level)) then return end
+	-- Texto del nivel con color ("27" en dorado) y, si hay, el separador ("·" en blanco)
+	local function LevelLabel(level, cfg)
 		local r, g, b
 		if level <= 0 then
 			r, g, b = 1, 0.1, 0.1
@@ -910,14 +904,25 @@ do
 			local c = cfg.color or { 1, 0.82, 0 }
 			r, g, b = c[1], c[2], c[3]
 		end
-		local text = format('|cff%02x%02x%02x%s|r ', r * 255, g * 255, b * 255, level > 0 and level or '??')
+		local text = format('|cff%02x%02x%02x%s|r', r * 255, g * 255, b * 255, level > 0 and level or '??')
 		local sep = cfg.separator
 		if sep == nil then sep = '·' end
 		if sep ~= '' then
 			local sc = cfg.separatorColor or { 1, 1, 1 }
-			text = text .. format('|cff%02x%02x%02x%s|r ', sc[1] * 255, sc[2] * 255, sc[3] * 255, sep)
+			text = text .. format(' |cff%02x%02x%02x%s|r', sc[1] * 255, sc[2] * 255, sc[3] * 255, sep)
 		end
 		return text
+	end
+
+	-- Nivel dentro del texto del nombre ("27 · Nombre"), con position = 'inline'
+	local function InlineLevel(plateFrame)
+		local cfg = ns.Config.nameOnlyLevel
+		local uf = plateFrame.unitFrame
+		local unit = uf and uf.namePlateUnitToken
+		if not (cfg and cfg.enabled and cfg.position == 'inline' and unit and plateFrame.actorType == 'friendlyplayer') then return end
+		local ok, level = pcall(UnitLevel, unit)
+		if not (ok and type(level) == 'number') or (issecretvalue and issecretvalue(level)) then return end
+		return LevelLabel(level, cfg) .. ' '
 	end
 
 	-- "Solo nombre" de jugadores aliados: (nivel ·) nombre y debajo la hermandad en dorado
@@ -987,15 +992,8 @@ do
 		lvl:SetFont(file, lsize, flags or '')
 		lvl:SetShadowColor(name:GetShadowColor())
 		lvl:SetShadowOffset(name:GetShadowOffset())
-		lvl:SetText(level > 0 and level or '??')
-		if level <= 0 then
-			lvl:SetTextColor(1, 0.1, 0.1)
-		elseif cfg.difficultyColor then
-			lvl:SetTextColor(LevelColor(level))
-		else
-			local c = cfg.color or { 0.9, 0.9, 0.9 }
-			lvl:SetTextColor(c[1], c[2], c[3])
-		end
+		lvl:SetTextColor(1, 1, 1)
+		lvl:SetText(LevelLabel(level, cfg))
 		lvl:ClearAllPoints()
 		if cfg.position == 'left' then
 			-- el nombre va centrado: su primera línea empieza a media anchura del centro

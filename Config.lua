@@ -97,13 +97,15 @@ ns.Config = {
 	},
 
 	-- Plater, "solo nombre" de jugadores aliados: nivel del jugador.
-	-- position: 'inline' = en el mismo texto, "27 · Nombre"; 'above' = centrado encima;
-	-- 'left' = a la izquierda (gap = separación y smaller = puntos menos que el nombre,
-	-- solo en 'above' y 'left'). color = { r, g, b } fijo (dorado de "mismo nivel");
-	-- con difficultyColor = true, en color de dificultad
+	-- position: 'left' = texto aparte a la izquierda ("27 ·"), con nombre y hermandad
+	-- centrados como sin nivel; 'inline' = en el mismo texto del nombre ("27 · Nombre");
+	-- 'above' = centrado encima. gap = separación y smaller = puntos menos que el
+	-- nombre (solo 'left' y 'above'); separator = '' para quitar el "·".
+	-- color = { r, g, b } fijo (dorado de "mismo nivel"); con difficultyColor = true,
+	-- en color de dificultad
 	nameOnlyLevel = {
-		enabled = true, position = 'inline', separator = '', separatorColor = { 1, 1, 1 }, -- separator = '·' para "27 · Nombre"
-		gap = 1, smaller = 0, color = { 1, 0.82, 0 }, difficultyColor = false,
+		enabled = true, position = 'left', separator = '>', separatorColor = { 1, 1, 1 },
+		gap = 2, smaller = 0, color = { 1, 0.82, 0 }, difficultyColor = false,
 	},
 
 	-- Plater, "solo nombre": halo detrás del nombre de los aliados por debajo de

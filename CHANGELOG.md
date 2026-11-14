@@ -1,5 +1,9 @@
 # Cambios
 
+## v1.4.2 — 2026-11-14
+
+- Plater: en "solo nombre", el nivel va en un texto aparte a la izquierda del nombre (`27 >`, el nivel en dorado y el separador en blanco), y el nombre y la hermandad quedan centrados en la placa como sin nivel. Se ajusta en `nameOnlyLevel` de `Config.lua` (`separator`, `gap`; `position = 'inline'` para llevarlo dentro del nombre).
+
 ## v1.4.1 — 2026-11-14
 
 - Plater: en "solo nombre", el nivel va sin separador: `27 Nombre` (`separator = '·'` en `nameOnlyLevel` para volver al punto).
