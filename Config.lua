@@ -102,7 +102,7 @@ ns.Config = {
 	-- solo en 'above' y 'left'). color = { r, g, b } fijo (dorado de "mismo nivel");
 	-- con difficultyColor = true, en color de dificultad
 	nameOnlyLevel = {
-		enabled = true, position = 'inline', separator = '·', separatorColor = { 1, 1, 1 },
+		enabled = true, position = 'inline', separator = '', separatorColor = { 1, 1, 1 }, -- separator = '·' para "27 · Nombre"
 		gap = 1, smaller = 0, color = { 1, 0.82, 0 }, difficultyColor = false,
 	},
 

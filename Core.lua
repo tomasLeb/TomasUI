@@ -37,7 +37,8 @@ end
 -- (p. ej. añadido en una versión nueva), lo escribimos sin reimportar todo el perfil.
 -- Los de marcos de unidad se ven al momento; el resto tras el siguiente /reload.
 function ns.ApplyLiveOverrides()
-	local cfg = ActiveConfig()
+	-- ns.ActiveConfig: la función local ActiveConfig se define más abajo
+	local cfg = ns.ActiveConfig and ns.ActiveConfig()
 	local E = ElvUI and ElvUI[1]
 	if not (cfg and E and E.db) then return end
 	local unitframes = false
@@ -909,9 +910,14 @@ do
 			local c = cfg.color or { 1, 0.82, 0 }
 			r, g, b = c[1], c[2], c[3]
 		end
-		local sc = cfg.separatorColor or { 1, 1, 1 }
-		return format('|cff%02x%02x%02x%s|r |cff%02x%02x%02x%s|r ', r * 255, g * 255, b * 255, level > 0 and level or '??',
-			sc[1] * 255, sc[2] * 255, sc[3] * 255, cfg.separator or '·')
+		local text = format('|cff%02x%02x%02x%s|r ', r * 255, g * 255, b * 255, level > 0 and level or '??')
+		local sep = cfg.separator
+		if sep == nil then sep = '·' end
+		if sep ~= '' then
+			local sc = cfg.separatorColor or { 1, 1, 1 }
+			text = text .. format('|cff%02x%02x%02x%s|r ', sc[1] * 255, sc[2] * 255, sc[3] * 255, sep)
+		end
+		return text
 	end
 
 	-- "Solo nombre" de jugadores aliados: (nivel ·) nombre y debajo la hermandad en dorado

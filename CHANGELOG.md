@@ -1,5 +1,10 @@
 # Cambios
 
+## v1.4.1 — 2026-11-14
+
+- Plater: en "solo nombre", el nivel va sin separador: `27 Nombre` (`separator = '·'` en `nameOnlyLevel` para volver al punto).
+- Corregido: los ajustes forzados de ElvUI no se aplicaban al entrar al juego (solo con `/tui aplicar`). Ahora sí, así que el texto de nivel del marco de objetivo desaparece y la mascota queda con el mismo alto que jugador y objetivo sin reimportar el perfil.
+
 ## v1.4.0 — 2026-11-14
 
 - Plater: en "solo nombre", el **nivel** de los jugadores aliados va en la misma línea que el nombre, `27 · Nombre`: el nivel en dorado, el punto en blanco y el nombre en su color de clase (`??` en rojo si es una calavera). Se ajusta en `nameOnlyLevel` de `Config.lua` (también se puede poner encima o a la izquierda del nombre, o en color de dificultad).
