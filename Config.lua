@@ -30,18 +30,9 @@ ns.Config = {
 		-- (sin esto ElvUI le da 36 y la vida queda más baja que el poder)
 		['unitframe.units.pet.height'] = 42,
 
-		-- Nivel del objetivo fuera del marco, a la izquierda de la vida, en color de
-		-- dificultad. Va pegado al marco (210 de ancho): xOffset = -(210 + 4) lo deja
-		-- 4 px a su izquierda; yOffset 10 lo centra en la mitad de arriba (la vida).
-		['unitframe.units.target.customTexts.TomasUI_Nivel.enable'] = true,
-		['unitframe.units.target.customTexts.TomasUI_Nivel.text_format'] = '[difficultycolor][level]',
-		['unitframe.units.target.customTexts.TomasUI_Nivel.attachTextTo'] = 'Frame',
-		['unitframe.units.target.customTexts.TomasUI_Nivel.justifyH'] = 'RIGHT',
-		['unitframe.units.target.customTexts.TomasUI_Nivel.xOffset'] = -214,
-		['unitframe.units.target.customTexts.TomasUI_Nivel.yOffset'] = 10,
-		['unitframe.units.target.customTexts.TomasUI_Nivel.size'] = 14,
-		['unitframe.units.target.customTexts.TomasUI_Nivel.font'] = 'Righteous',
-		['unitframe.units.target.customTexts.TomasUI_Nivel.fontOutline'] = 'SHADOW',
+		-- El texto de nivel a la izquierda del marco de objetivo (v1.3.0) ya no se usa:
+		-- se desactiva en los perfiles que lo tengan
+		['unitframe.units.target.customTexts.TomasUI_Nivel.enable'] = false,
 	},
 
 	-- Se fuerzan encima de los ajustes privados de ElvUI (por personaje) al aplicar
@@ -103,6 +94,16 @@ ns.Config = {
 	friendlyPlates = {
 		nameOnly = true, barsForHealers = true,
 		healerTrees = { PRIEST = { 1, 2 }, PALADIN = { 1 }, DRUID = { 3 }, SHAMAN = { 3 } },
+	},
+
+	-- Plater, "solo nombre" de jugadores aliados: nivel del jugador.
+	-- position: 'inline' = en el mismo texto, "27 · Nombre"; 'above' = centrado encima;
+	-- 'left' = a la izquierda (gap = separación y smaller = puntos menos que el nombre,
+	-- solo en 'above' y 'left'). color = { r, g, b } fijo (dorado de "mismo nivel");
+	-- con difficultyColor = true, en color de dificultad
+	nameOnlyLevel = {
+		enabled = true, position = 'inline', separator = '·', separatorColor = { 1, 1, 1 },
+		gap = 1, smaller = 0, color = { 1, 0.82, 0 }, difficultyColor = false,
 	},
 
 	-- Plater, "solo nombre": halo detrás del nombre de los aliados por debajo de

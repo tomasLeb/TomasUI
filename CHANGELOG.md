@@ -1,5 +1,10 @@
 # Cambios
 
+## v1.4.0 — 2026-11-14
+
+- Plater: en "solo nombre", el **nivel** de los jugadores aliados va en la misma línea que el nombre, `27 · Nombre`: el nivel en dorado, el punto en blanco y el nombre en su color de clase (`??` en rojo si es una calavera). Se ajusta en `nameOnlyLevel` de `Config.lua` (también se puede poner encima o a la izquierda del nombre, o en color de dificultad).
+- ElvUI: quitado el texto de nivel a la izquierda del marco de objetivo; se desactiva en los perfiles que ya lo tenían.
+
 ## v1.3.5 — 2026-11-14
 
 - Plater: el halo de vida baja en "solo nombre" aparece por debajo del 25 % de vida (antes, 50 %).

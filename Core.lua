@@ -42,7 +42,9 @@ function ns.ApplyLiveOverrides()
 	if not (cfg and E and E.db) then return end
 	local unitframes = false
 	for path, value in pairs(cfg.profileOverrides or {}) do
-		if GetPath(E.db, path) ~= value then
+		local current = GetPath(E.db, path)
+		-- un "false" sobre algo que no existe no tiene nada que desactivar
+		if current ~= value and not (value == false and current == nil) then
 			SetPath(E.db, path, value)
 			if path:find('^unitframe%.') then unitframes = true end
 		end
@@ -889,12 +891,36 @@ do
 	end
 	ns.UpdateLowHealthGlow = UpdateGlow
 
-	-- "Solo nombre" de jugadores aliados: el nombre y debajo la hermandad en dorado
+	-- Nivel dentro del texto del nombre ("27 · Nombre"), con position = 'inline'
+	local function InlineLevel(plateFrame)
+		local cfg = ns.Config.nameOnlyLevel
+		local uf = plateFrame.unitFrame
+		local unit = uf and uf.namePlateUnitToken
+		if not (cfg and cfg.enabled and cfg.position == 'inline' and unit and plateFrame.actorType == 'friendlyplayer') then return end
+		local ok, level = pcall(UnitLevel, unit)
+		if not (ok and type(level) == 'number') or (issecretvalue and issecretvalue(level)) then return end
+		local r, g, b
+		if level <= 0 then
+			r, g, b = 1, 0.1, 0.1
+		elseif cfg.difficultyColor and GetCreatureDifficultyColor then
+			local c = GetCreatureDifficultyColor(level)
+			r, g, b = c.r, c.g, c.b
+		else
+			local c = cfg.color or { 1, 0.82, 0 }
+			r, g, b = c[1], c[2], c[3]
+		end
+		local sc = cfg.separatorColor or { 1, 1, 1 }
+		return format('|cff%02x%02x%02x%s|r |cff%02x%02x%02x%s|r ', r * 255, g * 255, b * 255, level > 0 and level or '??',
+			sc[1] * 255, sc[2] * 255, sc[3] * 255, cfg.separator or '·')
+	end
+
+	-- "Solo nombre" de jugadores aliados: (nivel ·) nombre y debajo la hermandad en dorado
 	local function NameOnlyText(plateFrame, withGuild)
 		local uf = plateFrame.unitFrame
 		local name = plateFrame.namePlateUnitName or (uf and uf.namePlateUnitName)
 		if type(name) ~= 'string' or (issecretvalue and issecretvalue(name)) then return end
-		local text = name
+		-- el nombre sin código de color: conserva el color de clase que le da Plater
+		local text = (InlineLevel(plateFrame) or '') .. name
 		if withGuild and plateFrame.playerGuildName then
 			local r, g, b = GuildColor()
 			text = text .. '\n' .. format('|cff%02x%02x%02x', r * 255, g * 255, b * 255)
@@ -906,10 +932,80 @@ do
 	local function UpdateNameOnlyText(plateFrame)
 		local nameString = plateFrame and plateFrame.CurrentUnitNameString
 		if not (nameString and plateFrame.IsFriendlyPlayerWithoutHealthBar and plateFrame.actorType == 'friendlyplayer') then return end
-		if not (plateFrame.PlateConfig and plateFrame.PlateConfig.show_guild_name and plateFrame.playerGuildName) then return end
-		local text = NameOnlyText(plateFrame, true)
+		local withGuild = plateFrame.PlateConfig and plateFrame.PlateConfig.show_guild_name and plateFrame.playerGuildName and true
+		local cfg = ns.Config.nameOnlyLevel
+		local inline = cfg and cfg.enabled and cfg.position == 'inline'
+		if not (withGuild or inline) then return end
+		local text = NameOnlyText(plateFrame, withGuild)
 		if text then nameString:SetText(text) end
 	end
+
+	-- "Solo nombre" de jugadores aliados: nivel en un texto aparte, más pequeño, a la
+	-- encima del nombre (o a su izquierda), en un color fijo o de dificultad
+	local function LevelColor(level)
+		local c = (GetCreatureDifficultyColor and GetCreatureDifficultyColor(level))
+			or (GetQuestDifficultyColor and GetQuestDifficultyColor(level))
+		if type(c) == 'table' and c.r then return c.r, c.g, c.b end
+		return 1, 0.82, 0
+	end
+
+	local function UpdateNameOnlyLevel(plateFrame)
+		local uf = plateFrame and plateFrame.unitFrame
+		local cfg = ns.Config.nameOnlyLevel
+		if not uf then return end
+		local lvl = uf.TUILevel
+		local name = plateFrame.CurrentUnitNameString
+		local unit = uf.namePlateUnitToken
+		local wanted = cfg and cfg.enabled and cfg.position ~= 'inline' and name and unit and plateFrame.IsFriendlyPlayerWithoutHealthBar
+			and plateFrame.actorType == 'friendlyplayer'
+		local level
+		if wanted then
+			local ok, l = pcall(UnitLevel, unit)
+			if ok and type(l) == 'number' and not (issecretvalue and issecretvalue(l)) then level = l end
+		end
+		local playerName = plateFrame.namePlateUnitName or uf.namePlateUnitName
+		if not level or type(playerName) ~= 'string' or (issecretvalue and issecretvalue(playerName)) then
+			if lvl then lvl:Hide() end
+			return
+		end
+		local file, size, flags = name:GetFont()
+		if not file then if lvl then lvl:Hide() end return end
+		if not lvl then
+			lvl = uf:CreateFontString(nil, 'OVERLAY')
+			uf.TUILevel = lvl
+			-- texto invisible para medir el ancho de la primera línea (solo el nombre)
+			uf.TUILevelMeasure = uf:CreateFontString(nil, 'OVERLAY')
+			uf.TUILevelMeasure:Hide()
+		end
+		local lsize = math.max(8, (size or 12) - (cfg.smaller or 3))
+		lvl:SetFont(file, lsize, flags or '')
+		lvl:SetShadowColor(name:GetShadowColor())
+		lvl:SetShadowOffset(name:GetShadowOffset())
+		lvl:SetText(level > 0 and level or '??')
+		if level <= 0 then
+			lvl:SetTextColor(1, 0.1, 0.1)
+		elseif cfg.difficultyColor then
+			lvl:SetTextColor(LevelColor(level))
+		else
+			local c = cfg.color or { 0.9, 0.9, 0.9 }
+			lvl:SetTextColor(c[1], c[2], c[3])
+		end
+		lvl:ClearAllPoints()
+		if cfg.position == 'left' then
+			-- el nombre va centrado: su primera línea empieza a media anchura del centro
+			local m = uf.TUILevelMeasure
+			m:SetFont(file, size or 12, flags or '')
+			m:SetText(playerName)
+			local ok, w = pcall(m.GetStringWidth, m)
+			if not (ok and type(w) == 'number') then w = 0 end
+			lvl:SetPoint('RIGHT', name, 'TOP', -(w / 2) - (cfg.gap or 3), -((size or 12) / 2))
+		else
+			-- centrado encima del nombre
+			lvl:SetPoint('BOTTOM', name, 'TOP', 0, cfg.gap or 1)
+		end
+		lvl:Show()
+	end
+	ns.UpdateNameOnlyLevel = UpdateNameOnlyLevel
 
 	local function HookPlate(uf, plateFrame)
 		uf.TUIPlate = plateFrame
@@ -960,6 +1056,7 @@ do
 		HookPlate(uf, plateFrame)
 		HideAurasWithoutBar(uf)
 		UpdateNameOnlyText(plateFrame)
+		UpdateNameOnlyLevel(plateFrame)
 		UpdateGlow(plateFrame)
 		if not WantsGuild(plateFrame) then
 			if uf.TUIGuild then uf.TUIGuild:Hide() end
@@ -1036,12 +1133,17 @@ do
 
 	-- vida de las placas: actualizar el halo
 	local g = CreateFrame('Frame')
-	for _, ev in ipairs({ 'UNIT_HEALTH', 'UNIT_MAXHEALTH', 'NAME_PLATE_UNIT_ADDED' }) do pcall(g.RegisterEvent, g, ev) end
+	for _, ev in ipairs({ 'UNIT_HEALTH', 'UNIT_MAXHEALTH', 'NAME_PLATE_UNIT_ADDED', 'UNIT_LEVEL' }) do pcall(g.RegisterEvent, g, ev) end
 	g:SetScript('OnEvent', function(_, event, unit)
 		if type(unit) ~= 'string' or not unit:find('^nameplate') then return end
 		local plate = C_NamePlate and C_NamePlate.GetNamePlateForUnit and C_NamePlate.GetNamePlateForUnit(unit)
 		if not (plate and plate.unitFrame) then return end
-		pcall(UpdateGlow, plate)
+		if event == 'UNIT_LEVEL' then
+			pcall(UpdateNameOnlyText, plate)
+			pcall(UpdateNameOnlyLevel, plate)
+		else
+			pcall(UpdateGlow, plate)
+		end
 	end)
 end
 
