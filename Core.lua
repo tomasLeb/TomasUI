@@ -790,20 +790,54 @@ do
 	-- nombre y del marco de auras de cada placa y lo corregimos al instante.
 	local busy = false
 
+	-- Puntos de combo (recursos de Plater): si están en esta placa y hay alguno a la
+	-- vista, devuelve el marco y su alto (en unidades de la placa)
+	local function ResourceOn(uf)
+		local R = _G.Plater and _G.Plater.Resources
+		if not (R and R.GetMainResourceFrame and uf and uf.healthBar) then return end
+		local ok, main = pcall(R.GetMainResourceFrame)
+		if not (ok and main and main:IsShown() and main:GetParent() == uf.healthBar) then return end
+		local bar = main.currentResourceBarShown
+		if not (bar and bar:IsShown() and bar.widgets) then return end
+		local h = 0
+		for i, w in ipairs(bar.widgets) do
+			local bg = bar.widgetsBackground and bar.widgetsBackground[i]
+			if w:IsShown() or (bg and bg:IsShown()) then h = math.max(h, w:GetHeight() or 0) end
+		end
+		if h <= 0 then return end
+		return main, h * (main:GetScale() or 1)
+	end
+
+	-- Los puntos de combo justo encima del nombre (y las auras encima de ellos)
+	local function PlaceResource(uf, plateFrame)
+		local main, h = ResourceOn(uf)
+		local name = plateFrame.CurrentUnitNameString
+		if not (main and name) then return end
+		local s = main:GetScale() or 1
+		busy = true
+		main:ClearAllPoints()
+		main:SetPoint('CENTER', name, 'TOP', 0, (AURA_GAP + h / 2) / s)
+		busy = false
+		return h
+	end
+
 	local function PlaceAuras(uf, plateFrame)
 		local Plater = _G.Plater
 		local name = plateFrame.CurrentUnitNameString
 		local profile = Plater and Plater.db and Plater.db.profile
 		if not (profile and name) then return end
 		local a1, a2 = profile.aura_frame1_anchor, profile.aura_frame2_anchor
+		-- con puntos de combo a la vista, las auras suben por encima de ellos; sin ellos, no queda hueco
+		local rh = PlaceResource(uf, plateFrame)
+		local extra = rh and (rh + AURA_GAP) or 0
 		busy = true
 		if uf.BuffFrame then
 			uf.BuffFrame:ClearAllPoints()
-			uf.BuffFrame:SetPoint('BOTTOM', name, 'TOP', (a1 and a1.x) or 0, AURA_GAP)
+			uf.BuffFrame:SetPoint('BOTTOM', name, 'TOP', (a1 and a1.x) or 0, AURA_GAP + extra)
 		end
 		if uf.BuffFrame2 then
 			uf.BuffFrame2:ClearAllPoints()
-			uf.BuffFrame2:SetPoint('BOTTOM', name, 'TOP', (a2 and a2.x) or 0, AURA_GAP + ((a2 and a1) and (a2.y - a1.y) or 0))
+			uf.BuffFrame2:SetPoint('BOTTOM', name, 'TOP', (a2 and a2.x) or 0, AURA_GAP + extra + ((a2 and a1) and (a2.y - a1.y) or 0))
 		end
 		busy = false
 	end
@@ -1011,6 +1045,18 @@ do
 	end
 	ns.UpdateNameOnlyLevel = UpdateNameOnlyLevel
 
+	-- Recolocar auras y puntos de combo en las placas a la vista
+	local function RefreshResourcePlates()
+		local plates = C_NamePlate and C_NamePlate.GetNamePlates and C_NamePlate.GetNamePlates()
+		for _, plate in ipairs(plates or {}) do
+			local uf = plate.unitFrame
+			local pf = plate
+			if uf and pf and pf.CurrentUnitNameString and (WantsGuild(pf) or RaisePlainName(pf)) then
+				pcall(PlaceAuras, uf, pf)
+			end
+		end
+	end
+
 	local function HookPlate(uf, plateFrame)
 		uf.TUIPlate = plateFrame
 		-- Plater usa un texto de nombre distinto con barra y en "solo nombre", y recicla
@@ -1089,6 +1135,14 @@ do
 		local Plater = _G.Plater
 		if hooked or not (Plater and Plater.UpdateUnitName and Plater.UpdatePlateSize and Plater.AddGuildNameToPlayerName) then return end
 		hooked = true
+		-- Puntos de combo: al cambiar de objetivo o de puntos, recolocar
+		local R = Plater.Resources
+		if R then
+			local function Refresh() pcall(RefreshResourcePlates) end
+			for _, fn in ipairs({ 'UpdateMainResourceFrame', 'UpdateResources_NoDepleted', 'UpdateResources_WithDepleted', 'HidePlaterResourceFrame' }) do
+				if type(R[fn]) == 'function' then hooksecurefunc(R, fn, Refresh) end
+			end
+		end
 		-- Escudito de "no interrumpible": Plater lo centra en el borde de la barra de
 		-- lanzamiento del lado del icono y lo tapa; lo pasamos al borde contrario
 		if Plater.UpdateCastbarIcon then
@@ -1277,6 +1331,9 @@ do
 		end
 		if changed then
 			if Plater.RefreshDBUpvalues then pcall(Plater.RefreshDBUpvalues) end
+			local R = Plater.Resources
+			if R and R.RefreshResourcesDBUpvalues then pcall(R.RefreshResourcesDBUpvalues) end
+			if R and R.UpdateResourceFramePosition then pcall(R.UpdateResourceFramePosition) end
 			if Plater.UpdateAllPlates then pcall(Plater.UpdateAllPlates, true) end
 		end
 	end

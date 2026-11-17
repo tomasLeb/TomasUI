@@ -30,6 +30,26 @@ ns.Config = {
 		-- (sin esto ElvUI le da 36 y la vida queda más baja que el poder)
 		['unitframe.units.pet.height'] = 42,
 
+		-- Banda 1: sin los cuadraditos de tus buffs (no caben en barras de 12 de alto) y,
+		-- en su lugar, un único icono dentro de la barra, a la derecha, solo si el jugador
+		-- tiene un perjuicio que tú puedes disipar (druida: veneno y maldición)
+		['unitframe.units.raid1.buffIndicator.enable'] = false,
+		['unitframe.units.raid1.debuffs.enable'] = true,
+		['unitframe.units.raid1.debuffs.numrows'] = 1,
+		['unitframe.units.raid1.debuffs.perrow'] = 1,
+		['unitframe.units.raid1.debuffs.sizeOverride'] = 12,
+		['unitframe.units.raid1.debuffs.attachTo'] = 'FRAME',
+		['unitframe.units.raid1.debuffs.anchorPoint'] = 'RIGHT',
+		['unitframe.units.raid1.debuffs.xOffset'] = -13,
+		['unitframe.units.raid1.debuffs.yOffset'] = 0,
+		['unitframe.units.raid1.debuffs.filterLists.group1.enable'] = false,
+		['unitframe.units.raid1.debuffs.filterLists.group2.enable'] = false,
+		['unitframe.units.raid1.debuffs.filterLists.group3.enable'] = false,
+		['unitframe.units.raid1.debuffs.filterLists.group4.enable'] = false,
+		['unitframe.units.raid1.debuffs.filterLists.group5.enable'] = false,
+		['unitframe.units.raid1.debuffs.filterLists.group6.enable'] = true,
+		['unitframe.units.raid1.debuffs.filterLists.group6.filter'] = 'HARMFUL||RAID_PLAYER_DISPELLABLE',
+
 		-- El texto de nivel a la izquierda del marco de objetivo (v1.3.0) ya no se usa:
 		-- se desactiva en los perfiles que lo tengan
 		['unitframe.units.target.customTexts.TomasUI_Nivel.enable'] = false,
@@ -48,6 +68,7 @@ ns.Config = {
 		['plate_config.enemyplayer.actorname_use_class_color'] = true, -- y de enemigos
 		['plate_config.friendlyplayer.show_guild_name'] = true, -- hermandad bajo el nombre (aliados)
 		['plate_config.enemyplayer.show_guild_name'] = true, -- y enemigos
+		['resources_settings.global_settings.show_depleted'] = false, -- puntos de combo: solo los que tienes, sin huecos vacíos
 	},
 
 	-- Ajustes globales de ElvUI (no van en las exportaciones de perfil)

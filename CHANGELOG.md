@@ -1,5 +1,10 @@
 # Cambios
 
+## v1.5.0 — 2026-11-17
+
+- Plater: los **puntos de combo** (y otros recursos de Plater) van entre el nombre y las auras de tu objetivo; sin puntos, las auras bajan y no queda hueco. Los puntos vacíos se ocultan (forzado sobre el perfil).
+- ElvUI, Banda 1: sin los cuadraditos de tus buffs; en su lugar, un único icono dentro de la barra, a la derecha, solo si el jugador tiene un perjuicio que puedes disipar.
+
 ## v1.4.2 — 2026-11-14
 
 - Plater: en "solo nombre", el nivel va en un texto aparte a la izquierda del nombre (`27 >`, el nivel en dorado y el separador en blanco), y el nombre y la hermandad quedan centrados en la placa como sin nivel. Se ajusta en `nameOnlyLevel` de `Config.lua` (`separator`, `gap`; `position = 'inline'` para llevarlo dentro del nombre).
